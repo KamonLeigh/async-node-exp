@@ -9,15 +9,25 @@ router.route('/')
 
     // let rawData = fs.readFileSync(datafile, 'utf8');
 
-    fs.readFile(datafile, 'utf8', (err, data) => {
-      if (err) {
-        console.log(error);
+   getClothingData((err, data) => {
+      if(err) {
+        console.log(err);
       } else {
-        const clothingData = JSON.parse(data);
-        res.send(clothingData)
+
+        res.send(data);
       }
     });
 
   });
+
+  function getClothingData(cb) {
+    fs.readFile(datafile, 'utf8', (err, data) => {
+      if (err) {
+        cb(err, null);
+      } else {
+         cb(undefined, JSON.parse(data));
+      }
+    });
+  }
 
 module.exports = router;
