@@ -7,10 +7,16 @@ const router = express.Router();
 router.route('/')
   .get(function(req, res) {
 
-    let rawData = fs.readFileSync(datafile, 'utf8');
-    let clothingData = JSON.parse(rawData);
+    // let rawData = fs.readFileSync(datafile, 'utf8');
 
-    res.send(clothingData);
+    fs.readFile(datafile, 'utf8', (err, data) => {
+      if (err) {
+        console.log(error);
+      } else {
+        const clothingData = JSON.parse(data);
+        res.send(clothingData)
+      }
+    });
 
   });
 
