@@ -1,5 +1,6 @@
 const express = require('express');
 const fs = require('fs');
+const fs = require('fs').promises
 const datafile = 'server/data/clothing.json';
 const router = express.Router();
 
