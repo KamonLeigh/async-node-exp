@@ -1,33 +1,82 @@
 const express = require('express');
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const datafile = 'server/data/clothing.json';
 const router = express.Router();
 
-/* GET all clothing */
-router.route('/')
-  .get(function(req, res) {
 
-    // let rawData = fs.readFileSync(datafile, 'utf8');
+module.exports = function(monitor) {
+  let datamonitor = monitor;
 
-   getClothingData((err, data) => {
-      if(err) {
-        console.log(err);
-      } else {
+  datamonitor.on('dataAdded', (item) => {
+    setImmediate(() =>console.log(`New data was added: ${item}`))
+  })
 
+  /* GET all clothing */
+  router.route('/')
+    .get(async function (req, res) {
+
+      try {
+        let data = await getClothingData();
         res.send(data);
+      } catch (error) {
+        res.status(500).send(error);
       }
+    })
+
+    .post(async function (req, res) {
+      try {
+
+        let data = await getClothingData();
+
+        let nextID = getNextAvailableID(data);
+
+        let newClothingItem = {
+          clothingID: nextID,
+          itemName: req.body.itemName,
+          price: req.body.price
+        };
+
+        data.push(newClothingItem);
+
+        await saveClothingData(data);
+
+        datamonitor.emit('dataAdded', newClothingItem.itemName);
+
+        res.status(201).send(newClothingItem);
+      } catch (error) {
+        res.status(500).send(error);
+      }
+
     });
 
-  });
+  async function getClothingData() {
 
-  function getClothingData(cb) {
-    fs.readFile(datafile, 'utf8', (err, data) => {
-      if (err) {
-        cb(err, null);
-      } else {
-         cb(undefined, JSON.parse(data));
-      }
-    });
+    let rawData = await fsPromises.readFile(datafile, 'utf8');
+    let clothingData = JSON.parse(rawData);
+
+    return clothingData;
+
   }
 
-module.exports = router;
+  function getNextAvailableID(allClothingData) {
+
+    let maxID = 0;
+
+    allClothingData.forEach(function (element, index, array) {
+      if (element.clothingID > maxID) {
+        maxID = element.clothingID;
+      }
+    });
+    return ++maxID;
+  }
+
+  function saveClothingData(data) {
+    return fsPromises.writeFile(datafile, JSON.stringify(data, null, 4));
+  }
+
+
+
+
+  return router;
+}
